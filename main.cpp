@@ -72,7 +72,8 @@ void decryptFile(const std::string& inputFile, const std::string& outputFile, co
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 6) {
+    std::cout << "Arguments" << argc << std::endl;
+    if (argc != 5) {
         std::cerr << "Usage: " << argv[0] << " <input_file> <output_file> <key> <-e/-d>" << std::endl;
         return 1;
     }
