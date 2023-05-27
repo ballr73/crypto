@@ -1,0 +1,45 @@
+name: Create Release with Compressed Artifacts
+
+on:
+  create:
+    tags:
+      - "*"
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build and compile
+        run: make
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: |
+            This is a release for tag ${{ github.ref_name }}.
+          draft: false
+          prerelease: false
+
+      - name: Compress artifacts
+        run: |
+          tar czf hello-world-${{ github.ref_name }}.tar.gz -C bin .
+
+      - name: Upload compressed artifacts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: hello-world-${{ github.ref_name }}.tar.gz
+          asset_name: hello-world-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/gzip
+
