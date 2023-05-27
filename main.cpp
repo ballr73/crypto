@@ -36,15 +36,26 @@ std::string decryptAES(const std::string& ciphertext, const std::string& key) {
     return decryptedText;
 }
 
-int main() {
-    std::string plaintext = "Hello, World!";
-    std::string key = "mySecretKey12345";
+int main(int argc, char* argv[]) {
+    if (argc != 4) {
+        std::cerr << "Usage: " << argv[0] << " <string> <key> <-e/-d>" << std::endl;
+        return 1;
+    }
+    
+    std::string text = argv[1];
+    std::string key = argv[2];
+    std::string action = argv[3];
+    std::string result;
 
-    std::string encryptedText = encryptAES(plaintext, key);
-    std::cout << "Encrypted text: " << encryptedText << std::endl;
-
-    std::string decryptedText = decryptAES(encryptedText, key);
-    std::cout << "Decrypted text: " << decryptedText << std::endl;
-
+    if (action == "-e") {
+        result =  encryptAES(text, key);
+    } else if (action == "-d") {
+       result = decryptAES(text, key);
+    } else {
+        std::cerr << "Invalid action specified. Use -e for encryption or -d for decryption." << std::endl;
+        return 1;
+    }
+    std::cout << result << std::endl;
     return 0;
 }
+

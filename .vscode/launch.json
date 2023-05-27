@@ -9,7 +9,11 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/bin/crypto",
-            "args": [],
+            "args": [
+                "text",
+                "mySecretKey12345",
+                "-e"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
