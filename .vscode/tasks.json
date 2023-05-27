@@ -34,7 +34,11 @@
                 "-regex",
                 "'.*cpp')",
                 "-o",
-                "${workspaceRoot}/bin/crypto"
+                "${workspaceRoot}/bin/crypto",
+                "-l",
+                "ssl",
+                "-l",
+                "crypto"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
