@@ -1,100 +1,97 @@
 #include <iostream>
-#include "model/Person.h"
-#include "model/Employee.h"
-#include "model/Worker.h"
-using namespace model;
+#include <fstream>
+#include <string>
+#include <cstring>
+#include <openssl/aes.h>
 
-const int PI = 12;
-enum Flavor: unsigned short int
-{
-    Vanilla,
-    Chocolate,
-    Strawberry,
-    Mint
-};
-void updatePerson(Person *p)
-{
-    p->Person::setAge(48);
-}
+void encryptFile(const std::string& inputFile, const std::string& outputFile, const std::string& key) {
+    // Initialize the AES encryption context
+    AES_KEY aesKey;
+    AES_set_encrypt_key(reinterpret_cast<const unsigned char*>(key.c_str()), key.length() * 8, &aesKey);
 
-void updateNumber(int *number)
-{
-    *number = *number + 1;
-    return;
-}
+    std::ifstream inputFileStream(inputFile, std::ios::binary);
+    std::ofstream outputFileStream(outputFile, std::ios::binary);
 
-int main() {
-    Flavor flavour = Chocolate;
-    std::cout << flavour << "\n";
-    int var = 20;
-    int *ip;
+    if (inputFileStream && outputFileStream) {
+        // Read and encrypt the file contents in blocks
+        unsigned char inputBuffer[AES_BLOCK_SIZE];
+        unsigned char outputBuffer[AES_BLOCK_SIZE];
 
-    ip = &var;
+        while (inputFileStream.read(reinterpret_cast<char*>(inputBuffer), AES_BLOCK_SIZE)) {
+            AES_encrypt(inputBuffer, outputBuffer, &aesKey);
+            outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), AES_BLOCK_SIZE);
+        }
 
-    std::cout << "Value of var variable: ";
-    std::cout << var << std::endl;
+        // Process any remaining bytes
+        size_t bytesRead = inputFileStream.gcount();
+        if (bytesRead > 0) {
+            memset(inputBuffer + bytesRead, 0, AES_BLOCK_SIZE - bytesRead);
+            AES_encrypt(inputBuffer, outputBuffer, &aesKey);
+            outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), AES_BLOCK_SIZE);
+        }
 
-    // print the address stored in ip pointer variable
-    std::cout << "Address stored in ip variable: ";
-    std::cout << ip << std::endl;
-
-    // access the value at the address available in pointer
-    std::cout << "Value of *ip variable: ";
-    std::cout << *ip << std::endl;
-
-    int y, z = 15;
-    int x;
-    x = 1;
-    
-    std::cout << "Number: " << x << "\n";
-    updateNumber(&x);
-    std::cout << "Number: " << x << "\n";
-
-    std::string firstName;
-    std::cout << "Enter your first name: ";
-    getline(std::cin, firstName);
-
-    // cout << fullName;
-    // cout << x;
-
-    Person person(firstName, "Ball", 33);
-    Person* p = &person;
-    
-    std::cout << p->Person::getAge() << "\n";
-    updatePerson(&person);
-    std::cout << p->Person::getAge() << "\n";
-
-    // Worker work(&person);
-    // work.Worker::DoWork();
-
-    // Worker *w = &work;
-    // w->Worker::DoWork();
-
-    Worker* worker = new Worker(&person);
-    worker->Worker::DoWork(NULL);
-
-    std::cout << p->Person::getAge() << "\n";
-
-    Employee employee("Ethan", "Ball", 12);
-    employee.setLastName("Smith");
-    employee.setAge(44);
-    employee.setJobTitle("Chef");
-
-    Worker *anotherWorker = new Worker(&employee);
-    anotherWorker->DoWork(NULL);
-    
-    Worker *workers = new Worker[10];
-    for (int i = 0; i < 10; i++)
-    {
-        workers[i].Worker::DoWork(&employee);
+        std::cout << "Encryption completed. Encrypted file: " << outputFile << std::endl;
+    } else {
+        std::cerr << "Error opening file!" << std::endl;
     }
-    
-    delete [] workers;
-    std::cout << employee.getFullName() << "\n";
-    std::cout << employee.getFullName() << "\n";
-    // *&x = 22;
-    // std::cout << x << '\n'; // print the value of variable x
-    // std::cout << &x << '\n'; // print the memory address of variable x
-    // std::cout << *&x << '\n';
+
+    inputFileStream.close();
+    outputFileStream.close();
+}
+
+void decryptFile(const std::string& inputFile, const std::string& outputFile, const std::string& key) {
+    // Initialize the AES decryption context
+    AES_KEY aesKey;
+    AES_set_decrypt_key(reinterpret_cast<const unsigned char*>(key.c_str()), key.length() * 8, &aesKey);
+
+    std::ifstream inputFileStream(inputFile, std::ios::binary);
+    std::ofstream outputFileStream(outputFile, std::ios::binary);
+
+    if (inputFileStream && outputFileStream) {
+        // Read and decrypt the file contents in blocks
+        unsigned char inputBuffer[AES_BLOCK_SIZE];
+        unsigned char outputBuffer[AES_BLOCK_SIZE];
+
+        while (inputFileStream.read(reinterpret_cast<char*>(inputBuffer), AES_BLOCK_SIZE)) {
+            AES_decrypt(inputBuffer, outputBuffer, &aesKey);
+            outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), AES_BLOCK_SIZE);
+        }
+
+        std::streamsize bytesRead = inputFileStream.gcount();
+        if (bytesRead > 0) {
+            outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), bytesRead);
+        }
+
+        std::cout << "Decryption completed. Decrypted file: " << outputFile << std::endl;
+    } else {
+        std::cerr << "Error opening file!" << std::endl;
+    }
+
+    inputFileStream.close();
+    outputFileStream.close();
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 6) {
+        std::cerr << "Usage: " << argv[0] << " <input_file> <output_file> <key> <-e/-d>" << std::endl;
+        return 1;
+    }
+
+    std::string inputFile = argv[1];
+    std::string outputFile = argv[2];
+    std::string key = argv[3];
+    std::string action = argv[4];
+
+    if (action == "-e") {
+        // Encrypt the input file
+        encryptFile(inputFile, outputFile, key);
+    } else if (action == "-d") {
+        // Decrypt the input file
+        decryptFile(inputFile, outputFile, key);
+    } else {
+        std::cerr << "Invalid action specified. Use -e for encryption or -d for decryption." << std::endl;
+        return 1;
+    }
+
     return 0;
 }

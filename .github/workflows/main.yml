@@ -31,7 +31,7 @@ jobs:
 
       - name: Compress artifacts
         run: |
-          tar czf hello-world-${{ github.ref_name }}.tar.gz -C bin .
+          tar czf crypto-${{ github.ref_name }}.tar.gz -C bin .
 
       - name: Upload compressed artifacts
         uses: actions/upload-release-asset@v1
@@ -39,7 +39,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: hello-world-${{ github.ref_name }}.tar.gz
-          asset_name: hello-world-${{ github.ref_name }}.tar.gz
+          asset_path: crypto-${{ github.ref_name }}.tar.gz
+          asset_name: crypto-${{ github.ref_name }}.tar.gz
           asset_content_type: application/gzip
 
