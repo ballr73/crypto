@@ -10,8 +10,9 @@
             "request": "launch",
             "program": "${workspaceRoot}/bin/crypto",
             "args": [
-                "text",
-                "mySecretKey12345",
+                "test.txt",
+                "test.enc",
+                "mySecretKey1234",
                 "-e"
             ],
             "stopAtEntry": false,

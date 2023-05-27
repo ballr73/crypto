@@ -1,61 +1,97 @@
 #include <iostream>
+#include <fstream>
 #include <string>
+#include <cstring>
 #include <openssl/aes.h>
 
-std::string encryptAES(const std::string& plaintext, const std::string& key) {
-    std::string encryptedText;
-
+void encryptFile(const std::string& inputFile, const std::string& outputFile, const std::string& key) {
     // Initialize the AES encryption context
     AES_KEY aesKey;
     AES_set_encrypt_key(reinterpret_cast<const unsigned char*>(key.c_str()), key.length() * 8, &aesKey);
 
-    // Allocate memory for the output buffer
-    encryptedText.resize(plaintext.size());
+    std::ifstream inputFileStream(inputFile, std::ios::binary);
+    std::ofstream outputFileStream(outputFile, std::ios::binary);
 
-    // Encrypt the plaintext using AES
-    AES_encrypt(reinterpret_cast<const unsigned char*>(plaintext.c_str()),
-                reinterpret_cast<unsigned char*>(&encryptedText[0]), &aesKey);
+    if (inputFileStream && outputFileStream) {
+        // Read and encrypt the file contents in blocks
+        unsigned char inputBuffer[AES_BLOCK_SIZE];
+        unsigned char outputBuffer[AES_BLOCK_SIZE];
 
-    return encryptedText;
+        while (inputFileStream.read(reinterpret_cast<char*>(inputBuffer), AES_BLOCK_SIZE)) {
+            AES_encrypt(inputBuffer, outputBuffer, &aesKey);
+            outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), AES_BLOCK_SIZE);
+        }
+
+        // Process any remaining bytes
+        size_t bytesRead = inputFileStream.gcount();
+        if (bytesRead > 0) {
+            memset(inputBuffer + bytesRead, 0, AES_BLOCK_SIZE - bytesRead);
+            AES_encrypt(inputBuffer, outputBuffer, &aesKey);
+            outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), AES_BLOCK_SIZE);
+        }
+
+        std::cout << "Encryption completed. Encrypted file: " << outputFile << std::endl;
+    } else {
+        std::cerr << "Error opening file!" << std::endl;
+    }
+
+    inputFileStream.close();
+    outputFileStream.close();
 }
 
-std::string decryptAES(const std::string& ciphertext, const std::string& key) {
-    std::string decryptedText;
-
+void decryptFile(const std::string& inputFile, const std::string& outputFile, const std::string& key) {
     // Initialize the AES decryption context
     AES_KEY aesKey;
     AES_set_decrypt_key(reinterpret_cast<const unsigned char*>(key.c_str()), key.length() * 8, &aesKey);
 
-    // Allocate memory for the output buffer
-    decryptedText.resize(ciphertext.size());
+    std::ifstream inputFileStream(inputFile, std::ios::binary);
+    std::ofstream outputFileStream(outputFile, std::ios::binary);
 
-    // Decrypt the ciphertext using AES
-    AES_decrypt(reinterpret_cast<const unsigned char*>(ciphertext.c_str()),
-                reinterpret_cast<unsigned char*>(&decryptedText[0]), &aesKey);
+    if (inputFileStream && outputFileStream) {
+        // Read and decrypt the file contents in blocks
+        unsigned char inputBuffer[AES_BLOCK_SIZE];
+        unsigned char outputBuffer[AES_BLOCK_SIZE];
 
-    return decryptedText;
+        while (inputFileStream.read(reinterpret_cast<char*>(inputBuffer), AES_BLOCK_SIZE)) {
+            AES_decrypt(inputBuffer, outputBuffer, &aesKey);
+            outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), AES_BLOCK_SIZE);
+        }
+
+        std::streamsize bytesRead = inputFileStream.gcount();
+        if (bytesRead > 0) {
+            outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), bytesRead);
+        }
+
+        std::cout << "Decryption completed. Decrypted file: " << outputFile << std::endl;
+    } else {
+        std::cerr << "Error opening file!" << std::endl;
+    }
+
+    inputFileStream.close();
+    outputFileStream.close();
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " <string> <key> <-e/-d>" << std::endl;
+    if (argc != 5) {
+        std::cerr << "Usage: " << argv[0] << " <input_file> <output_file> <key> <-e/-d>" << std::endl;
         return 1;
     }
-    
-    std::string text = argv[1];
-    std::string key = argv[2];
-    std::string action = argv[3];
-    std::string result;
+
+    std::string inputFile = argv[1];
+    std::string outputFile = argv[2];
+    std::string key = argv[3];
+    std::string action = argv[4];
 
     if (action == "-e") {
-        result =  encryptAES(text, key);
+        // Encrypt the input file
+        encryptFile(inputFile, outputFile, key);
     } else if (action == "-d") {
-       result = decryptAES(text, key);
+        // Decrypt the input file
+        decryptFile(inputFile, outputFile, key);
     } else {
         std::cerr << "Invalid action specified. Use -e for encryption or -d for decryption." << std::endl;
         return 1;
     }
-    std::cout << result << std::endl;
+
     return 0;
 }
-
