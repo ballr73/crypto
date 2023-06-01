@@ -54,12 +54,23 @@ void decryptFile(const std::string& inputFile, const std::string& outputFile, co
 
         while (inputFileStream.read(reinterpret_cast<char*>(inputBuffer), AES_BLOCK_SIZE)) {
             AES_decrypt(inputBuffer, outputBuffer, &aesKey);
-            outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), AES_BLOCK_SIZE);
-        }
-
-        std::streamsize bytesRead = inputFileStream.gcount();
-        if (bytesRead > 0) {
-            outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), bytesRead);
+            unsigned char lastByte = outputBuffer[AES_BLOCK_SIZE - 1];
+            if(lastByte == 0) {
+                size_t bytesToWrite = AES_BLOCK_SIZE;
+                for (size_t i = AES_BLOCK_SIZE; i > 0; i--)
+                {
+                    unsigned char byteToCheck = outputBuffer[i - 1];
+                    if(byteToCheck != 0) {
+                        bytesToWrite = i;
+                        break;
+                    }
+                }
+                
+                outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), bytesToWrite);
+            }
+            else {
+                outputFileStream.write(reinterpret_cast<const char*>(outputBuffer), AES_BLOCK_SIZE);
+            }
         }
 
         std::cout << "Decryption completed. Decrypted file: " << outputFile << std::endl;
