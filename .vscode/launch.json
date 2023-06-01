@@ -10,10 +10,10 @@
             "request": "launch",
             "program": "${workspaceRoot}/bin/crypto",
             "args": [
-                "test.txt",
                 "test.enc",
-                "mySecretKey1234",
-                "-e"
+                "test.dec",
+                "mySecretKey12345",
+                "-d"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
